@@ -6,6 +6,7 @@
     "@aptos-labs/ts-sdk": "^1.33.1",
     "@aptos-labs/wallet-adapter-ant-design": "^3.0.23",
     "@aptos-labs/wallet-adapter-react": "^3.7.9",
+    "bootstrap": "^5.3.3",
     "cra-template": "1.2.0",
     "ethers": "^6.13.4",
     "petra-plugin-wallet-adapter": "^0.4.5",

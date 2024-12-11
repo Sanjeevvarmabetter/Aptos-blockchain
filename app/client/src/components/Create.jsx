@@ -4,7 +4,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import axios from 'axios';
 import 'react-toastify/dist/ReactToastify.css';
 
-import { TransactionPayloadEntryFunction, EntryFunction } from '@aptos-labs/ts-sdk'; // Correct imports
+import { TransactionPayloadEntryFunction, EntryFunction } from '@aptos-labs/ts-sdk';
 
 const Create = ({ aptosClient, account, nftMarketPlaceAddress }) => {
   const [video, setVideo] = useState('');
@@ -15,7 +15,7 @@ const Create = ({ aptosClient, account, nftMarketPlaceAddress }) => {
 
   const PINATA_API_KEY = "20a1ac93e10b67f081c5";
   const PINATA_SECRET_API_KEY = "2b3680b650e07a507c4df5a9649b9b6438d7f8e4c3cc0cfab22a73bb968d02d7";
-  
+
   const uploadToPinata = async (event) => {
     const file = event.target.files[0];
     if (!file) {
@@ -53,7 +53,7 @@ const Create = ({ aptosClient, account, nftMarketPlaceAddress }) => {
       return;
     }
 
-    setLoading(true); 
+    setLoading(true);
 
     try {
       const metadata = { video, name, description };
@@ -67,18 +67,18 @@ const Create = ({ aptosClient, account, nftMarketPlaceAddress }) => {
       const metadataUri = `https://gateway.pinata.cloud/ipfs/${res.data.IpfsHash}`;
 
       const payload = new TransactionPayloadEntryFunction(
-        EntryFunction.natural(
-          `${nftMarketPlaceAddress}::nft`,
-          "mint_nft",
-          [],
-          [
-            TransactionPayloadEntryFunction.Value.string(metadataUri),
-            TransactionPayloadEntryFunction.Value.u64(Number(price)),
-          ]
-        )
+          EntryFunction.natural(
+              `${nftMarketPlaceAddress}::nft`,
+              "mint_nft",
+              [],
+              [
+                metadataUri,
+                Number(price),
+              ]
+          )
       );
 
-      const rawTransaction = await aptosClient.generateTransaction(account.address(), payload);
+      const rawTransaction = await aptosClient.generateTransaction(account, payload);
       const signedTransaction = await aptosClient.signTransaction(account, rawTransaction);
       const transaction = await aptosClient.submitTransaction(signedTransaction);
       await aptosClient.waitForTransaction(transaction.hash);
@@ -88,23 +88,23 @@ const Create = ({ aptosClient, account, nftMarketPlaceAddress }) => {
       console.error("NFT creation error:", err);
       toast.error('NFT creation failed.');
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
   return (
-    <div className="container mt-5">
-      <Row className="g-4">
-        <Form.Control type="file" accept="jpeg/*" onChange={uploadToPinata} />
-        <Form.Control onChange={(e) => setName(e.target.value)} size="lg" type="text" placeholder="Name" />
-        <Form.Control onChange={(e) => setDescription(e.target.value)} size="lg" as="textarea" placeholder="Description" />
-        <Form.Control onChange={(e) => setPrice(e.target.value)} size="lg" type="number" placeholder="Price in APT" />
-        <Button onClick={createNFT} variant="primary" size="lg" disabled={loading}>
-          {loading ? "Creating..." : "Create & List NFT!"}
-        </Button>
-      </Row>
-      <ToastContainer />
-    </div>
+      <div className="container mt-5">
+        <Row className="g-4">
+          <Form.Control type="file" accept="video/*" onChange={uploadToPinata} />
+          <Form.Control onChange={(e) => setName(e.target.value)} size="lg" type="text" placeholder="Name" />
+          <Form.Control onChange={(e) => setDescription(e.target.value)} size="lg" as="textarea" placeholder="Description" />
+          <Form.Control onChange={(e) => setPrice(e.target.value)} size="lg" type="number" placeholder="Price in APT" />
+          <Button onClick={createNFT} variant="primary" size="lg" disabled={loading}>
+            {loading ? "Creating..." : "Create & List NFT!"}
+          </Button>
+        </Row>
+        <ToastContainer />
+      </div>
   );
 };
 

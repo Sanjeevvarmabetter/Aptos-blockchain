@@ -12,7 +12,6 @@ const NavBar = ({ setUserAccount }) => {
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">
             <Nav.Link as={Link} to="/">Home</Nav.Link>
-            <Nav.Link as={Link} to="/all-nft">All NFTs</Nav.Link>
             <Nav.Link as={Link} to="/create">Create NFT</Nav.Link>
           </Nav>
           <Nav>

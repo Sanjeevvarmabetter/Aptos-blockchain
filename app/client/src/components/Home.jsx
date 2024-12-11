@@ -10,8 +10,8 @@ const Home = ({ aptosClient, nftMarketPlaceAddress }) => {
   const fetchNFTs = async () => {
     try {
       const resource = await aptosClient.getAccountResource(
-        nftMarketPlaceAddress,
-        `${nftMarketPlaceAddress}::nft::State`
+          nftMarketPlaceAddress,
+          `${nftMarketPlaceAddress}::nft::State`
       );
 
       if (resource?.data?.nfts) {
@@ -32,32 +32,32 @@ const Home = ({ aptosClient, nftMarketPlaceAddress }) => {
   }, []);
 
   return (
-    <div className="container mt-5">
-      <h1>All NFTs</h1>
-      {loading ? (
-        <div>Loading NFTs...</div>
-      ) : (
-        <Row className="g-4">
-          {nfts.length > 0 ? (
-            nfts.map((nft, index) => (
-              <Col key={index} md={4}>
-                <Card>
-                  <Card.Img variant="top" src={nft.ipfs_hash} />
-                  <Card.Body>
-                    <Card.Title>{nft.name || `NFT #${index}`}</Card.Title>
-                    <Card.Text>{nft.description || "No description provided."}</Card.Text>
-                    <Card.Text>Price: {nft.price || "N/A"} APT</Card.Text>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))
-          ) : (
-            <div>No NFTs found</div>
-          )}
-        </Row>
-      )}
-      <ToastContainer />
-    </div>
+      <div className="container mt-5">
+        <h1>All NFTs</h1>
+        {loading ? (
+            <div>Loading NFTs...</div>
+        ) : (
+            <Row className="g-4">
+              {nfts.length > 0 ? (
+                  nfts.map((nft, index) => (
+                      <Col key={index} md={4}>
+                        <Card>
+                          <Card.Img variant="top" src={nft.metadata.video} alt={nft.metadata.name} />
+                          <Card.Body>
+                            <Card.Title>{nft.metadata.name}</Card.Title>
+                            <Card.Text>{nft.metadata.description}</Card.Text>
+                            <p>Price: {nft.price} APT</p>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                  ))
+              ) : (
+                  <p>No NFTs available</p>
+              )}
+            </Row>
+        )}
+        <ToastContainer />
+      </div>
   );
 };
 
