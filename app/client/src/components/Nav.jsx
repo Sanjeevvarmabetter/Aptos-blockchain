@@ -7,7 +7,7 @@ const NavBar = ({ setUserAccount }) => {
   return (
     <Navbar bg="dark" variant="dark" expand="lg">
       <Container>
-        <Navbar.Brand as={Link} to="/">NFT Marketplace</Navbar.Brand>
+        <Navbar.Brand as={Link} to="/">Aptos NFT Marketplace</Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">

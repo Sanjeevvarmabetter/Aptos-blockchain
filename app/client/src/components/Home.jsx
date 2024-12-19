@@ -38,8 +38,7 @@ const Home = ({ aptosClient, nftMarketPlaceAddress }) => {
           const itemToPush = {
             id: i.toString(),
             name: metadata.name,
-            thumbnail: metadata.thumbnail,
-            video: metadata.video,
+            image: metadata.image, // Make sure to use the correct field here
             owner: metadata.owner,
             price: metadata.price.toString(),
           };
@@ -74,15 +73,15 @@ const Home = ({ aptosClient, nftMarketPlaceAddress }) => {
                   nfts.map((nft, index) => (
                       <Col key={index} md={4}>
                         <Card>
-                          {/* Assuming the IPFS hash can link to the image/video */}
+                          {/* Assuming the IPFS hash can link to the image */}
                           <Card.Img
                               variant="top"
-                              src={`https://ipfs.io/ipfs/${nft.thumbnail}`}
+                              src={nft.image} // Use the image URL directly
                               alt={`NFT ${nft.id}`}
                           />
                           <Card.Body>
                             <Card.Title>{`NFT #${nft.id}`}</Card.Title>
-                            <Card.Text>{`Owner: ${nft.owner}`}</Card.Text>
+                            {/*<Card.Text>{`Owner: ${nft.owner}`}</Card.Text>*/}
                             <p>Price: {nft.price} APT</p>
                           </Card.Body>
                         </Card>

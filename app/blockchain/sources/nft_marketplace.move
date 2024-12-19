@@ -49,4 +49,6 @@ module nft_marketplace_address::nft{
         let state = borrow_global_mut<State>(@nft_marketplace_address);
         state.nfts
     }
+
+
 }
