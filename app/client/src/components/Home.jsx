@@ -10,25 +10,44 @@ const Home = ({ aptosClient, nftMarketPlaceAddress }) => {
   const fetchNFTs = async () => {
     try {
       // Fetch the State resource from the NFT marketplace address
-      const resource = await aptosClient.getAccountResource(
-          nftMarketPlaceAddress,
-          `${nftMarketPlaceAddress}::nft::State`
-      );
+      const resultData = await aptosClient.getAccountResources({
+        accountAddress: nftMarketPlaceAddress,
+        resourceType: `${nftMarketPlaceAddress}::nft::State`,
+      });
 
       // Log the entire response to inspect its structure
-      console.log('Resource data:', resource);
+      console.log('Resource data:', resultData);
 
-      // Check if the nfts data exists
-      if (resource && resource.data && resource.data.nfts) {
-        // Extracting NFTs and mapping them to an easier structure
-        const nftList = resource.data.nfts.map((nft) => ({
-          id: nft.id.toString(), // Ensure `id` is treated as a string
-          owner: nft.owner,
-          ipfs_hash: nft.ipfs_hash,
-          price: nft.price.toString(), // Ensure price is a string for display
-        }));
+      // Ensure the nfts data exists and has the correct structure
+      const nftStateResource = resultData.find(resource => resource.type === `${nftMarketPlaceAddress}::nft::State`);
 
-        setNfts(nftList);
+      if (nftStateResource && nftStateResource.data && nftStateResource.data.nfts) {
+        const fetchedItems = nftStateResource.data.nfts;
+        const length = fetchedItems.length;
+
+        // Initialize an array to store NFT items
+        let tempItems = [];
+        for (let i = 0; i < length; i++) {
+          let uri = fetchedItems[i]["ipfs_hash"];
+
+          // Fetch metadata from IPFS
+          const response = await fetch(uri);
+          const metadata = await response.json();
+
+          // Map the metadata to an easier structure
+          const itemToPush = {
+            id: i.toString(),
+            name: metadata.name,
+            thumbnail: metadata.thumbnail,
+            video: metadata.video,
+            owner: metadata.owner,
+            price: metadata.price.toString(),
+          };
+          tempItems.push(itemToPush);
+        }
+
+        // Set NFTs after fetching all metadata
+        setNfts(tempItems);
       } else {
         toast.error('No NFTs found or failed to fetch NFTs.');
       }
@@ -58,7 +77,7 @@ const Home = ({ aptosClient, nftMarketPlaceAddress }) => {
                           {/* Assuming the IPFS hash can link to the image/video */}
                           <Card.Img
                               variant="top"
-                              src={`https://ipfs.io/ipfs/${nft.ipfs_hash}`}
+                              src={`https://ipfs.io/ipfs/${nft.thumbnail}`}
                               alt={`NFT ${nft.id}`}
                           />
                           <Card.Body>
