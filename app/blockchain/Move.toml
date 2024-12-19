@@ -4,7 +4,7 @@ version = "1.0.0"
 authors = []
 
 [addresses]
-nft_marketplace_address='a817c48739252236274629df8fff952b3d3be385862263b26eeaa9477d3b5d6b'
+nft_marketplace_address='1845ddb3309cfc7b0c2b0aca55403660570154962e961e4662d2a239830aee9e'
 [dev-addresses]
 
 [dependencies.AptosFramework]

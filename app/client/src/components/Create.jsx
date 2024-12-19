@@ -1,111 +1,184 @@
-import { useState } from 'react';
-import { Row, Form, Button } from 'react-bootstrap';
-import { ToastContainer, toast } from 'react-toastify';
-import axios from 'axios';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useEffect, useState } from 'react'
+import axios from 'axios'
+import { toast } from 'react-toastify'
+import { useWallet } from '@aptos-labs/wallet-adapter-react';
 
-import { TransactionPayloadEntryFunction, EntryFunction } from '@aptos-labs/ts-sdk';
+function Create({ moduleName, moduleAddress, connected, account, client }) {
 
-const Create = ({ aptosClient, account, nftMarketPlaceAddress }) => {
-  const [video, setVideo] = useState('');
-  const [price, setPrice] = useState('');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { signAndSubmitTransaction } = useWallet();
 
-  const PINATA_API_KEY = "20a1ac93e10b67f081c5";
-  const PINATA_SECRET_API_KEY = "2b3680b650e07a507c4df5a9649b9b6438d7f8e4c3cc0cfab22a73bb968d02d7";
+  const [transactionInProgress, setTransactionInProgress] = useState(false);
+  const [imageFile, setImageFile] = useState(null); // Change to image file
+  const [forminfo, setFormInfo] = useState({
+    title: "",
+    image: "", // Image instead of thumbnail
+    price: 0,
+    owner: "",
+  });
 
-  const uploadToPinata = async (event) => {
-    const file = event.target.files[0];
-    if (!file) {
-      toast.error("Please select a file to upload.");
-      return;
+  useEffect(() => {
+    document.title = "Create"
+  }, []);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormInfo((prevState) => ({ ...prevState, [name]: value }));
+  };
+
+  const changeHandler = (event) => {
+    setImageFile(event.target.files[0]); // Handle image files instead of video
+  };
+
+  const handleEvent = async (e) => {
+    e.preventDefault();
+    forminfo.owner = account.address;
+    if (!imageFile) {
+      toast.error("Upload image!", {
+        position: "top-center"
+      })
+      return
     }
+    setTransactionInProgress(true);
 
     const formData = new FormData();
-    formData.append('file', file);
+    const jsonformData = new FormData();
+
+    formData.append('file', imageFile);
+    console.log(imageFile);
+
+    const metadata = JSON.stringify({
+      name: forminfo.title,
+    });
+    jsonformData.append('pinataMetadata', metadata);
+
+    const options = JSON.stringify({
+      cidVersion: 0,
+    });
+    jsonformData.append('pinataOptions', options);
 
     try {
-      const res = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', formData, {
+      toast.info("Uploading image to IPFS", {
+        position: "top-center"
+      });
+      const resFile = await axios({
+        method: "post",
+        url: "https://api.pinata.cloud/pinning/pinFileToIPFS",
+        data: formData,
         headers: {
-          'Content-Type': 'multipart/form-data',
-          pinata_api_key: PINATA_API_KEY,
-          pinata_secret_api_key: PINATA_SECRET_API_KEY,
+          pinata_api_key: `20a1ac93e10b67f081c5`,
+          pinata_secret_api_key: `2b3680b650e07a507c4df5a9649b9b6438d7f8e4c3cc0cfab22a73bb968d02d7`,
+          "Content-Type": "multipart/form-data",
         },
       });
-      setVideo(`https://gateway.pinata.cloud/ipfs/${res.data.IpfsHash}`);
-      toast.success('Video uploaded successfully!');
-    } catch (err) {
-      console.error("Pinata upload error:", err);
-      toast.error('Video upload failed.');
+      console.log("image: ", resFile.data);
+      const imageHash = `https://gateway.pinata.cloud/ipfs/${resFile.data.IpfsHash}`;
+
+      const info = {
+        name: forminfo.title,
+        description: forminfo.description,
+        image: imageHash, // Update to use imageHash
+        owner: forminfo.owner,
+        price: forminfo.price,
+      };
+      toast.info("Pinning metadata to IPFS", {
+        position: "top-center"
+      });
+
+      async function pinJSONToPinata(info) {
+        const url = 'https://api.pinata.cloud/pinning/pinJSONToIPFS';
+        const headers = {
+          'Content-Type': 'application/json',
+          'pinata_api_key': `20a1ac93e10b67f081c5`,
+          'pinata_secret_api_key': `2b3680b650e07a507c4df5a9649b9b6438d7f8e4c3cc0cfab22a73bb968d02d7`
+        };
+
+        try {
+          const res = await axios.post(url, info, { headers });
+          const meta = `https://gateway.pinata.cloud/ipfs/${res.data.IpfsHash}`
+          console.log("meta: ", meta);
+          console.log("minting...");
+          mintThenList(meta);
+
+        } catch (error) {
+          toast.error("Error minting NFT", {
+            position: "top-center"
+          })
+          setTransactionInProgress(false);
+          console.error(error);
+        }
+
+      }
+
+      pinJSONToPinata(info)
+
+    } catch (error) {
+      toast.error("Error minting NFT", {
+        position: "top-center"
+      })
+      setTransactionInProgress(false);
+      console.log(error);
     }
+
   };
 
-  const createNFT = async () => {
-    if (!video || !price || !name || !description) {
-      toast.error('All fields are required!');
-      return;
-    }
-
-    if (isNaN(price) || Number(price) <= 0) {
-      toast.error('Invalid price! Enter a number greater than 0.');
-      return;
-    }
-
-    setLoading(true);
+  const mintThenList = async (uri) => {
+    toast.info("Confirm to Mint the NFT", {
+      position: "top-center"
+    })
 
     try {
-      const metadata = { video, name, description };
-      const res = await axios.post('https://api.pinata.cloud/pinning/pinJSONToIPFS', metadata, {
-        headers: {
-          pinata_api_key: PINATA_API_KEY,
-          pinata_secret_api_key: PINATA_SECRET_API_KEY,
-        },
-      });
+      const listingPrice = Math.round(10 ** 8 * forminfo.price);
 
-      const metadataUri = `https://gateway.pinata.cloud/ipfs/${res.data.IpfsHash}`;
-
-      const payload = new TransactionPayloadEntryFunction(
-          EntryFunction.natural(
-              `${nftMarketPlaceAddress}::nft`,
-              "mint_nft",
-              [],
-              [
-                metadataUri,
-                Number(price),
-              ]
-          )
-      );
-
-      const rawTransaction = await aptosClient.generateTransaction(account, payload);
-      const signedTransaction = await aptosClient.signTransaction(account, rawTransaction);
-      const transaction = await aptosClient.submitTransaction(signedTransaction);
-      await aptosClient.waitForTransaction(transaction.hash);
-
-      toast.success('NFT minted and listed successfully!');
-    } catch (err) {
-      console.error("NFT creation error:", err);
-      toast.error('NFT creation failed.');
-    } finally {
-      setLoading(false);
+      const payload = {
+        data: {
+          function: `${moduleAddress}::${moduleName}::add_nft`,
+          functionArguments: [uri, listingPrice]
+        }
+      }
+      const response = await signAndSubmitTransaction(payload);
+      console.log(response);
+      toast.success("NFT minted successfully", { position: "top-center" })
+    } catch (error) {
+      console.log(error);
+      toast.error(error, {
+        position: "top-center"
+      })
     }
-  };
+
+    setTransactionInProgress(false)
+
+  }
 
   return (
-      <div className="container mt-5">
-        <Row className="g-4">
-          <Form.Control type="file" accept="video/*" onChange={uploadToPinata} />
-          <Form.Control onChange={(e) => setName(e.target.value)} size="lg" type="text" placeholder="Name" />
-          <Form.Control onChange={(e) => setDescription(e.target.value)} size="lg" as="textarea" placeholder="Description" />
-          <Form.Control onChange={(e) => setPrice(e.target.value)} size="lg" type="number" placeholder="Price in APT" />
-          <Button onClick={createNFT} variant="primary" size="lg" disabled={loading}>
-            {loading ? "Creating..." : "Create & List NFT!"}
-          </Button>
-        </Row>
-        <ToastContainer />
+      <div className='h-screen pt-24'>
+        <div className="container-fluid mt-5 text-left">
+          <div className="content mx-auto">
+            <form className="max-w-sm mx-auto">
+              <div className='max-w-lg mx-auto'>
+                <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="file">Upload Image</label>
+                <input onChange={changeHandler} name="file" className="block w-full mb-4 h-8 text-m text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" type="file" accept='.jpeg,.jpg,.png' />
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="title" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">NFT Name</label>
+                <input onChange={handleChange} type="text" id="title" name='title' className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 dark:shadow-sm-light" placeholder="Enter NFT name" required />
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="price" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Price</label>
+                <input onChange={handleChange} type="number" id="price" name='price' className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 dark:shadow-sm-light" placeholder="Enter price in APT" required />
+              </div>
+
+              <div className='text-center'>
+                <button onClick={handleEvent} className="text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2" disabled={!connected || transactionInProgress}>
+                  Mint NFT
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
-  );
-};
+  )
+}
 
 export default Create;

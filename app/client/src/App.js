@@ -3,30 +3,34 @@ import Nav from './components/Nav';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ToastContainer } from 'react-toastify';
 import Home from './components/Home';
-import Create from './components/Create';
+import Create from "./components/Create";
 import { useEffect, useState } from 'react';
 import 'react-toastify/dist/ReactToastify.css';
 
-import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
+import { AptosConfig, Network } from '@aptos-labs/ts-sdk';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { WalletSelector } from "@aptos-labs/wallet-adapter-ant-design";
 import "@aptos-labs/wallet-adapter-ant-design/dist/index.css";
+import { Account, Aptos, } from '@aptos-labs/ts-sdk';
 
 function App() {
   const aptosConfig = new AptosConfig({ network: Network.DEVNET });
   const aptosClient = new Aptos(aptosConfig);
 
   const moduleName = "nft";
-  const moduleAddress = "0xa817c48739252236274629df8fff952b3d3be385862263b26eeaa9477d3b5d6b";
+  const moduleAddress = "0x1845ddb3309cfc7b0c2b0aca55403660570154962e961e4662d2a239830aee9e";
 
   const [userAccount, setUserAccount] = useState(null);
-  const { connected, account, connect, disconnect } = useWallet();
+  const [isConnected, setIsConnected] = useState(false);
+  const { connected, account, connect, disconnect, client } = useWallet();
 
   useEffect(() => {
     if (connected && account) {
       setUserAccount(account.address);
+      setIsConnected(true);
     } else {
       setUserAccount(null);
+      setIsConnected(false);
     }
   }, [connected, account]);
 
@@ -53,7 +57,7 @@ function App() {
               />
               <Route
                   path="/create"
-                  element={<Create aptosClient={aptosClient} account={userAccount} nftMarketPlaceAddress={moduleAddress} />}
+                  element={<Create moduleName={moduleName} moduleAddress={moduleAddress} connected={isConnected} account={account} client={client} />}
               />
             </Routes>
           </div>
